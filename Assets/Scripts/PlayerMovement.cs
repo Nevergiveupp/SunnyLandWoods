@@ -53,4 +53,5 @@ public class PlayerMovement : MonoBehaviour
     {
         animator.SetBool("IsCrouching", isCrouching);
     }
+
 }

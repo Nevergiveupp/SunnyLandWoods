@@ -16,6 +16,7 @@ public class PlayerController2D : MonoBehaviour
 	private bool m_Grounded;            // Whether or not the player is grounded.
 	const float k_CeilingRadius = .2f; // Radius of the overlap circle to determine if the player can stand up
 	private Rigidbody2D m_Rigidbody2D;
+	private Animator anim;
 	private bool m_FacingRight = true;  // For determining which way the player is currently facing.
 	private Vector3 m_Velocity = Vector3.zero;
 
@@ -33,6 +34,7 @@ public class PlayerController2D : MonoBehaviour
 	private void Awake()
 	{
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
+		anim = GetComponent<Animator>();
 
 		if (OnLandEvent == null)
 			OnLandEvent = new UnityEvent();
@@ -54,7 +56,7 @@ public class PlayerController2D : MonoBehaviour
 			if (colliders[i].gameObject != gameObject)
 			{
 				m_Grounded = true;
-				if (!wasGrounded)
+				if (wasGrounded)
 					OnLandEvent.Invoke();
 			}
 		}
@@ -143,5 +145,52 @@ public class PlayerController2D : MonoBehaviour
 		Vector3 theScale = transform.localScale;
 		theScale.x *= -1;
 		transform.localScale = theScale;
+	}
+
+	// 消灭敌人
+	private void OnCollisionEnter2D(Collision2D collision)
+	{
+		// 如果碰撞到敌人
+		if (collision.gameObject.tag == "Enemies")
+		{
+			// 获取敌人对象
+			Enemy enemy = collision.gameObject.GetComponent<Enemy>();
+
+			// 如果正在坠落
+			if (anim.GetBool("IsJumping"))
+			{
+				// 播放敌人死亡动画
+				enemy.JumpOn();
+
+				// 角色跃起
+				m_Rigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x, m_JumpForce/50);
+				anim.SetBool("IsJumping", true);
+			}
+			// 如果人物在敌人左侧，受伤弹回左侧
+			else if (this.transform.position.x < collision.gameObject.transform.position.x)
+			{
+				m_Rigidbody2D.velocity = new Vector2(-4, m_Rigidbody2D.velocity.y);
+				// 播放音效
+				//hurtAudio.Play();
+				SoundManager.instance.HurtAudio();
+				// 受伤标记
+				//isHurt = true;
+				// 血量减少
+				//TakeDamage(25);
+			}
+			// 如果人物在敌人右侧，受伤弹回右侧
+			else if (this.transform.position.x > collision.gameObject.transform.position.x)
+			{
+				m_Rigidbody2D.velocity = new Vector2(4, m_Rigidbody2D.velocity.y);
+				// 播放音效
+				//hurtAudio.Play();
+				SoundManager.instance.HurtAudio();
+				// 受伤标记
+				//isHurt = true;
+				// 血量减少
+				//TakeDamage(25);
+			}
+		}
+
 	}
 }
